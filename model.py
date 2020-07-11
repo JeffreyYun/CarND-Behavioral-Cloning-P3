@@ -1,4 +1,6 @@
 import csv
+import os
+
 import cv2
 import numpy as np
 import sklearn
@@ -11,8 +13,8 @@ from keras.layers.convolutional import Conv2D
 
 DATA_PATH = "./data2"
 # DATA_PATH = "/opt/carnd_p3/data"
-MODEL_NAME = "model_turns4.h5"
-if 0:
+MODEL_NAME = "model_turns5.h5"
+if not os.path.isfile(MODEL_NAME):
     LOAD_MODEL = None; SAVE_MODEL = MODEL_NAME
 else:
     LOAD_MODEL = MODEL_NAME; SAVE_MODEL = "save_" + LOAD_MODEL
@@ -26,7 +28,7 @@ with open(DATA_PATH + "/driving_log.csv", 'r') as f:
         lines.append(line)
 lines = lines[1:] # skip header line
 print("Number of lines: ", len(lines))
-print("LOAD_MODEL: " + LOAD_MODEL + ", SAVE_MODEL: " + SAVE_MODEL)
+print("LOAD_MODEL: {}, SAVE_MODEL: {}".format(LOAD_MODEL, SAVE_MODEL))
 
 train_samples, valid_samples = train_test_split(lines, test_size=0.1)
 
@@ -46,6 +48,8 @@ def generator(samples, batch_size):
                     fname = line[i].split('/')[-1] # source_path.split()[-1]
                     local_path = DATA_PATH + "/IMG/" + fname
                     img = cv2.imread(local_path)
+                    img = img[70:-25, :]    # Crop out noisy scenery, keep only road terrain
+                    img = cv2.resize(img, (32,32))  # Resize to avoid GPU memory issues
                     ang = float(line[3]) + steer_corr_factor[i]
                     # Add original image and ang
                     images.append(img)
@@ -70,8 +74,7 @@ valid_gen = generator(valid_samples, batch_size=BATCH_SIZE)
 """ Construct model """
 def new_model():
     model = Sequential()
-    model.add(Lambda(lambda x: x / 255.0 - 0.5, input_shape=(160,320,3)))   # Normalizing
-    model.add(Cropping2D(cropping=((65,25), (0,0))))    # Cropping (out the top noisy scenery)
+    model.add(Lambda(lambda x: x / 255.0 - 0.5, input_shape=(32,32,3)))   # Normalizing
     model.add(Conv2D(24,(5,5),activation='relu',strides=(2,2)))
     #model.add(Dropout(0.1))
     model.add(Conv2D(36,(5,5),activation='relu',strides=(2,2)))
@@ -99,12 +102,12 @@ model_checkpoint_callback = keras.callbacks.ModelCheckpoint(
     monitor='val_acc',
     mode='max',
     save_best_only=True)
-print("Loading " + LOAD_MODEL)
+print("Loading {}".format(LOAD_MODEL))
 if LOAD_MODEL is None:
     model = new_model()
 else:
     model = keras.models.load_model(LOAD_MODEL)
-print("Number of lines: ", len(lines), " in ", NUM_BATCHES, " batches")
+print("Number of lines: {} in {} batches".format(len(lines), NUM_BATCHES))
 model.fit_generator(generator=train_gen,
                     steps_per_epoch=NUM_BATCHES,
                     validation_data=valid_gen,

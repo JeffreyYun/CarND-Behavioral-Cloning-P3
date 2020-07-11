@@ -22,29 +22,29 @@ def generator(samples, batch_size=32):
     N = len(samples)
     while True:
         sklearn.utils.shuffle(samples)
+        steer_corr = 0.2
+        steer_corr_factor = [steer_corr * n for n in [0, 1, -1]]    # [center, left, right]
         # Generate a single batch
         for offset in range(0, N, batch_size):
             batch_samples = samples[offset:offset+batch_size]
             images = []
             angles = []
-            steer_corr = 0.2
-            steer_corr_factor = [steer_corr * n for n in [0, 1, -1]]    # [center, left, right]
             for line in batch_samples:
                 for i in range(3):
                     fname = line[0].split('/')[-1] # source_path.split()[-1]
-                    local_path = "../data/IMG/" + fname
-                    image = cv2.imread(local_path)
-                    measurement = float(line[3]) + steer_corr_factor[i]
-                    # Add original image and measurement
-                    images.append(image)
-                    angles.append(measurement)
+                    local_path = "./data/IMG/" + fname
+                    img = cv2.imread(local_path)
+                    ang = float(line[3]) + steer_corr_factor[i]
+                    # Add original image and ang
+                    images.append(img)
+                    angles.append(ang)
                     # Augment data with horizontally-flipped image (eq. to driving CCW)
-                    images.append(np.fliplr(image))
-                    angles.append(-measurement)
-                # Yield the batch
-                X_train = np.array(images)
-                y_train = np.array(angles)
-                yield sklearn.utils.shuffle(X_train, y_train)
+                    images.append(np.fliplr(img))
+                    angles.append(-ang)
+            # Yield the batch
+            X_train = np.array(images)
+            y_train = np.array(angles)
+            yield sklearn.utils.shuffle(X_train, y_train)
 
 # Hyperparams
 BATCH_SIZE = 32

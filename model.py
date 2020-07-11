@@ -11,6 +11,10 @@ from keras.layers.convolutional import Conv2D
 
 # DATA_PATH = "./data"
 DATA_PATH = "/opt/carnd_p3/turns_data"
+LOAD_MODEL = None
+LOAD_MODEL = "model_turns.h5"
+SAVE_MODEL = LOAD_MODEL
+# SAVE_MODEL = "model_turns.h5"
 
 """ Import data and train """
 lines = []
@@ -53,6 +57,7 @@ def generator(samples, batch_size=32):
 
 # Hyperparams
 BATCH_SIZE = 32
+NUM_BATCHES = np.ceil(len(train_samples)//BATCH_SIZE)
 
 # compile and train the model using the generator function
 train_gen = generator(train_samples, batch_size=BATCH_SIZE)
@@ -60,35 +65,40 @@ valid_gen = generator(valid_samples, batch_size=BATCH_SIZE)
 
 
 """ Construct model """
-"""
-model = Sequential()
-model.add(Lambda(lambda x: x / 255.0 - 0.5, input_shape=(160,320,3)))   # Normalizing
-model.add(Cropping2D(cropping=((70,25), (0,0))))    # Cropping (out the top noisy scenery)
-model.add(Conv2D(24,5,5,subsample=(2,2),activation='relu'))
-model.add(Dropout(0.1))
-model.add(Conv2D(36,5,5,subsample=(2,2),activation='relu'))
-model.add(Dropout(0.15))
-model.add(Conv2D(48,5,5,subsample=(2,2),activation='relu'))
-model.add(Dropout(0.2))
-model.add(Conv2D(64,3,3,activation='relu'))
-model.add(Dropout(0.25))
-model.add(Conv2D(64,3,3,activation='relu'))
-model.add(Dropout(0.3))
-model.add(Flatten())
-model.add(Dense(100))
-model.add(Dropout(0.5))
-model.add(Dense(50))
-model.add(Dropout(0.5))
-model.add(Dense(10))
-model.add(Dropout(0.5))
-model.add(Dense(1))
-model.compile(optimizer='adam', loss='mse')
-"""
-model = keras.models.load_model('model.h5')
-print("Model loaded!")
+def new_model():
+    model = Sequential()
+    model.add(Lambda(lambda x: x / 255.0 - 0.5, input_shape=(160,320,3)))   # Normalizing
+    model.add(Cropping2D(cropping=((70,25), (0,0))))    # Cropping (out the top noisy scenery)
+    model.add(Conv2D(24,5,5,subsample=(2,2),activation='relu'))
+    #model.add(Dropout(0.1))
+    model.add(Conv2D(36,5,5,subsample=(2,2),activation='relu'))
+    #model.add(Dropout(0.15))
+    model.add(Conv2D(48,5,5,subsample=(2,2),activation='relu'))
+    #model.add(Dropout(0.2))
+    model.add(Conv2D(64,3,3,activation='relu'))
+    #model.add(Dropout(0.25))
+    model.add(Conv2D(64,3,3,activation='relu'))
+    #model.add(Dropout(0.3))
+    model.add(Flatten())
+    model.add(Dense(100))
+    model.add(Dropout(0.5))
+    model.add(Dense(50))
+    model.add(Dropout(0.5))
+    model.add(Dense(10))
+    #model.add(Dropout(0.5))
+    model.add(Dense(1))
+    model.compile(optimizer='adam', loss='mse')
+    return model
+
+if LOAD_MODEL is None:
+    model = new_model()
+else:
+    model = keras.models.load_model(LOAD_MODEL)
+    print("Model loaded!")
+print("Number of lines: ", len(lines), " in ", NUM_BATCHES, " batches")
 model.fit_generator(generator=train_gen,
-                    steps_per_epoch=np.ceil(len(train_samples)/BATCH_SIZE),
+                    steps_per_epoch=NUM_BATCHES,
                     validation_data=valid_gen,
-                    validation_steps=np.ceil(len(valid_samples)/BATCH_SIZE),
-                    epochs=3, verbose=1)
-model.save('model.h5')
+                    validation_steps=NUM_BATCHES,
+                    epochs=1, verbose=1)
+model.save(SAVE_MODEL)

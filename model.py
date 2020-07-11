@@ -1,6 +1,8 @@
 import csv
 import cv2
 import numpy as np
+import sklearn
+from sklearn.model_selection import train_test_split
 import keras
 from keras.model import Sequential
 from keras.layers import Flatten, Dense, Lambda
@@ -15,30 +17,42 @@ with open("../data/driving_log.csv", 'r') as f:
     for line in reader:
         lines.append(line)
 
-images = []
-measurements = []
-steer_correction = 0.2
-steer_corr_factor = [0, 1, -1]    # [center, left, right]
-for line in lines:
-    for i in range(3):
-        source_path = line[0]
-        tokens = source_path.split('/')
-        fname = tokens[-1]
-        local_path = f"../data/IMG/{fname}"
-        image = cv2.imread(local_path)
-        measurement = float(line[3]) + steer_corr_factor[i] * steer_correction
-        # Add image and measurement
-        images.append(image)
-        measurements.append(measurement)
-        # Augment data with horizontally-flipped image (eq. to driving CCW)
-        images.append(np.fliplr(image))
-        measurements.append(-measurement)
+train_samples, valid_samples = train_test_split(lines, test_size=0.2)
 
-X_train = np.array(images)
-y_train = np.array(measurements)
+def generator(samples, batch_size=32):
+    N = len(samples)
+    while True:
+        sklearn.utils.shuffle(samples)
+        # Generate a single batch
+        for offset in range(0, N, batch_size):
+            batch_samples = samples[offset:offset+batch_size]
+            images = []
+            angles = []
+            steer_corr = 0.2
+            steer_corr_factor = [steer_corr * n for n in [0, 1, -1]]    # [center, left, right]
+            for line in batch_samples:
+                for i in range(3):
+                    fname = line[0].split('/')[-1] # source_path.split()[-1]
+                    local_path = f"../data/IMG/{fname}"
+                    image = cv2.imread(local_path)
+                    measurement = float(line[3]) + steer_corr_factor[i]
+                    # Add original image and measurement
+                    images.append(image)
+                    angles.append(measurement)
+                    # Augment data with horizontally-flipped image (eq. to driving CCW)
+                    images.append(np.fliplr(image))
+                    angles.append(-measurement)
+                # Yield the batch
+                X_train = np.array(images)
+                y_train = np.array(angles)
+                yield sklearn.utils.shuffle(X_train, y_train)
 
-print("X_train: ", X_train.shape)
-print("y_train: ", y_train.shape)
+# Hyperparams
+BATCH_SIZE = 32
+
+# compile and train the model using the generator function
+train_gen = generator(train_samples, batch_size=BATCH_SIZE)
+valid_gen = generator(valid_samples, batch_size=BATCH_SIZE)
 
 
 """ Construct model """
@@ -57,12 +71,9 @@ model.add(Dense(50))
 model.add(Dense(10))
 model.add(Dense(1))
 model.compile(optimizer='adam', loss='mse')
-model.fit(X_train, y_train, validation_split=0.2, shuffle=True, nb_epoch=3)
-
-# TODO: Use generators to reduce memory usage from data
-
-
-# TODO: Collect more data using your own driving (GPU)
-
-
-# TODO: Eat dinner while training
+model.fit_generator(generator=train_gen,
+                    steps_per_epoch=np.ceil(len(train_samples)/BATCH_SIZE),
+                    validation_data=valid_gen,
+                    validation_steps=np.ceil(len(valid_samples)/BATCH_SIZE),
+                    epochs=5, verbose=1)
+model.save('model.h5')

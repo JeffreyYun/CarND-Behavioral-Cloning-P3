@@ -6,7 +6,7 @@ from sklearn.model_selection import train_test_split
 import keras
 from keras.model import Sequential
 from keras.layers import Flatten, Dense, Lambda
-from keras.layers.convolutional import Convolution2D, Cropping2D
+from keras.layers.convolutional import Convolution2D, Cropping2D, Dropout
 from keras.layers.pooling import MaxPooling2D
 
 
@@ -56,19 +56,26 @@ valid_gen = generator(valid_samples, batch_size=BATCH_SIZE)
 
 
 """ Construct model """
-# TODO: Experiment more with model architecture
 model = Sequential()
 model.add(Lambda(lambda x: x / 255.0 - 0.5, input_shape=(160,320,3)))   # Normalizing
 model.add(Cropping2D(cropping=((70,25), (0,0))))    # Cropping (out the top noisy scenery)
 model.add(Convolution2D(24,5,5,subsample=(2,2),activation='relu'))
+model.add(Dropout(0.1))
 model.add(Convolution2D(36,5,5,subsample=(2,2),activation='relu'))
+model.add(Dropout(0.15))
 model.add(Convolution2D(48,5,5,subsample=(2,2),activation='relu'))
+model.add(Dropout(0.2))
 model.add(Convolution2D(64,5,5,activation='relu'))
+model.add(Dropout(0.25))
 model.add(Convolution2D(64,5,5,activation='relu'))
+model.add(Dropout(0.3))
 model.add(Flatten())
 model.add(Dense(100))
+model.add(Dropout(0.5))
 model.add(Dense(50))
+model.add(Dropout(0.5))
 model.add(Dense(10))
+model.add(Dropout(0.5))
 model.add(Dense(1))
 model.compile(optimizer='adam', loss='mse')
 model.fit_generator(generator=train_gen,

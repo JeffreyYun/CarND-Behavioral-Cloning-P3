@@ -93,7 +93,7 @@ At the end of the process, the vehicle is able to drive autonomously around the 
 
 #### 2. Final Model Architecture
 
-The final model architecture consisted of a convolution neural network with five convolutional layers and three fully-connected layers.
+The final model architecture consisted of a CNN with five convolutional layers and three fully-connected layers, utilizing ReLU activation layers to introduce nonlinearity. It was described earlier.
 
 Here is a visualization of the architecture (note: visualizing the architecture is optional according to the project rubric)
 
@@ -113,13 +113,16 @@ I then recorded the vehicle recovering from the left side and right sides of the
 ![alt text][image4]
 ![alt text][image5]
 
-To augment the data sat, I also horizontally flipped images and angles. Since I went counter-clockwise around the track for my training data, this flipping would replicate going clockwise around the track. For example, here is an image that has then been flipped:
+To augment the data sat, I also horizontally flipped images and angles. Since I went counter-clockwise around the track for my training data, this flipping would replicate going clockwise around the track.
 
-![alt text][image6]
-![alt text][image7]
+After the collection process, I had 25k+ data points. Data augmenting via horizontal-flipping doubled this amount. I then preprocessed this data by cropping out the top and bottom portion of each image, leaving only the salient portion of the road.
 
-After the collection process, I had 20k+ data points. Data augmenting via horizontal-flipping doubled this amount. I then preprocessed this data by cropping out the top and bottom portion, leaving only the salient portion of the road.
-
-I finally randomly shuffled the data set and placed 20% of the data into a validation set, formed using sklearn.model_selection.train_test_split.
+I finally randomly shuffled the data set and placed 10% of the data into a validation set, formed using sklearn.model_selection.train_test_split.
 
 I used this training data for training the model. The validation set helped determine if the model was over or under fitting. I used an Adam optimizer so that manually training the learning rate wasn't necessary.
+
+Training difficulties:
+* Multiple data sets with varying amounts of center-road driving and responding to particular turns (car would often crash into the corners of the bridge or the brown road after -- it seemed very attracted to corners). I took a /lot/ of data to correct turns at these places.
+* I was saving my data in /opt/carnd_p3/turns_data and one time the machine froze and everything in /opt/carnd_p3 was reset, losing all my data
+* I created multiple models of varying architectures and levels of training of each of the dataset, to compare driving behavior. Finally, I arrived at one which was smooth and did not attract itself to edges. Data collecting took ~10 hours in total, and this was entirely aimed to get the car to complete a loop around the first track.
+* The car would frequently swerve in straight sections (especially the early one) at my desired 30mph. So I recorded the video at an agonizingly 10mph so the vehicle could respond fast enough and avert the edge-attracting disasters that has long plagued this 15 GPU workspace hours later.

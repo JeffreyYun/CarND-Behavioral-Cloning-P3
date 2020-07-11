@@ -12,13 +12,13 @@ from keras.layers.convolutional import Conv2D
 
 
 DATA_PATH = "./data2"
-# DATA_PATH = "/opt/carnd_p3/data"
+DATA_PATH = "/opt/carnd_p3/data"
 MODEL_NAME = "model_turns6.h5"
 if not os.path.isfile(MODEL_NAME):
     LOAD_MODEL = None; SAVE_MODEL = MODEL_NAME
 else:
     LOAD_MODEL = MODEL_NAME; SAVE_MODEL = "save_" + LOAD_MODEL
-NUM_EPOCHS = 5
+NUM_EPOCHS = 1
 INPUT_SHAPE = (160,320,3)
 # INPUT_SHAPE = (64,64,3) # (160,320,3)
 
@@ -69,7 +69,7 @@ def generator(samples, batch_size):
             yield sklearn.utils.shuffle(X_train, y_train)
 
 # Hyperparams
-BATCH_SIZE = 32
+BATCH_SIZE = 16
 NUM_BATCHES = np.ceil(len(train_samples)//BATCH_SIZE)
 
 # compile and train the model using the generator function
@@ -91,7 +91,7 @@ def new_model():
     model.add(Conv2D(64,(3,3),activation='relu'))
     #model.add(Dropout(0.25))
     model.add(Conv2D(64,(3,3),activation='relu'))
-    #model.add(Dropout(0.3))
+    # model.add(Dropout(0.5))
     model.add(Flatten())
     model.add(Dense(100))
     model.add(Dropout(0.5))
@@ -100,7 +100,7 @@ def new_model():
     model.add(Dense(10))
     #model.add(Dropout(0.5))
     model.add(Dense(1))
-    model.compile(optimizer='adam', loss='mse')
+    #model.compile(optimizer='adam', loss='mse')
     return model
 
 model_checkpoint_callback = keras.callbacks.ModelCheckpoint(
@@ -114,6 +114,7 @@ if LOAD_MODEL is None:
     model = new_model()
 else:
     model = keras.models.load_model(LOAD_MODEL)
+    model.compile(optimizer=keras.optimizers.Adam(1e-5), loss='mse')
 print("Number of lines: {} in {} batches".format(len(lines), NUM_BATCHES))
 model.fit_generator(generator=train_gen,
                     steps_per_epoch=NUM_BATCHES,

@@ -15,6 +15,8 @@ with open("./data/driving_log.csv", 'r') as f:
     reader = csv.reader(f)
     for line in reader:
         lines.append(line)
+lines = lines[1:] # skip header line
+print("Number of lines: ", len(lines))
 
 train_samples, valid_samples = train_test_split(lines, test_size=0.2)
 

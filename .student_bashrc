@@ -9,11 +9,19 @@ pip install requests -q
 ln -sf /home/workspace/simulator.desktop /root/Desktop/simulator.desktop
 sh end_process.sh
 
+cd CarND-Behavioral-Cloning-P3
+
 # GET SSH WORKING -- 1) Generate ssh keys, 2) Copy your keys to /home/workspace/ssh, 3) add this to your .student_bashrc
+##SETUP
+#ssh-keygen -t rsa -b 4096 -C "thisishaoyu@gmail.com"
+#mkdir -p /home/workspace/ssh
+#cp /root/.ssh/* /home/workspace/ssh
+#cat /home/workspace/ssh/id_rsa.pub
+
 git config --global user.email "thisishaoyu@gmail.com"
 git config --global user.name "Jeffrey Yun"
-#ssh-keygen -t rsa -b 4096 -C "thisishaoyu@gmail.com"
 eval "$(ssh-agent -s)"
 ssh-add /home/workspace/ssh/id_rsa
-#ssh-add ~/.ssh/id_rsa
-#cat ~/.ssh/id_rsa.pub
+
+run_train() {git pull && python model.py}
+run_test() {python drive.py model.h5}

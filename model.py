@@ -9,9 +9,12 @@ from keras.layers import Flatten, Dense, Lambda, Cropping2D, Dropout, MaxPooling
 from keras.layers.convolutional import Conv2D
 
 
+# DATA_PATH = "./data"
+DATA_PATH = "/opt/carnd_p3/turns_data"
+
 """ Import data and train """
 lines = []
-with open("./data/driving_log.csv", 'r') as f:
+with open(DATA_PATH + "/driving_log.csv", 'r') as f:
     reader = csv.reader(f)
     for line in reader:
         lines.append(line)
@@ -34,7 +37,7 @@ def generator(samples, batch_size=32):
             for line in batch_samples:
                 for i in range(3):
                     fname = line[0].split('/')[-1] # source_path.split()[-1]
-                    local_path = "./data/IMG/" + fname
+                    local_path = DATA_PATH + "/IMG/" + fname
                     img = cv2.imread(local_path)
                     ang = float(line[3]) + steer_corr_factor[i]
                     # Add original image and ang
@@ -57,6 +60,7 @@ valid_gen = generator(valid_samples, batch_size=BATCH_SIZE)
 
 
 """ Construct model """
+"""
 model = Sequential()
 model.add(Lambda(lambda x: x / 255.0 - 0.5, input_shape=(160,320,3)))   # Normalizing
 model.add(Cropping2D(cropping=((70,25), (0,0))))    # Cropping (out the top noisy scenery)
@@ -79,9 +83,12 @@ model.add(Dense(10))
 model.add(Dropout(0.5))
 model.add(Dense(1))
 model.compile(optimizer='adam', loss='mse')
+"""
+model = keras.models.load_model('model.h5')
+print("Model loaded!")
 model.fit_generator(generator=train_gen,
                     steps_per_epoch=np.ceil(len(train_samples)/BATCH_SIZE),
                     validation_data=valid_gen,
                     validation_steps=np.ceil(len(valid_samples)/BATCH_SIZE),
-                    epochs=5, verbose=1)
+                    epochs=3, verbose=1)
 model.save('model.h5')

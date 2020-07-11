@@ -62,7 +62,8 @@ def telemetry(sid, data):
         image = Image.open(BytesIO(base64.b64decode(imgString)))
         image_array = np.asarray(image)
         import cv2
-        image_array = cv2.resize(image_array[70:-25, :], (32, 32))
+        INPUT_SHAPE = (64,64,3) # (160,320,3)
+        #image_array = cv2.resize(image_array[70:-25, :], INPUT_SHAPE[:2])
         steering_angle = float(model.predict(image_array[None, :, :, :], batch_size=1))
 
         throttle = controller.update(float(speed))

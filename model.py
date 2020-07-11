@@ -9,12 +9,14 @@ from keras.layers import Flatten, Dense, Lambda, Cropping2D, Dropout, MaxPooling
 from keras.layers.convolutional import Conv2D
 
 
-# DATA_PATH = "./data"
-DATA_PATH = "/opt/carnd_p3/turns_data"
-LOAD_MODEL = None
-LOAD_MODEL = "model_turns.h5"
-SAVE_MODEL = LOAD_MODEL
-# SAVE_MODEL = "model_turns.h5"
+DATA_PATH = "./data2"
+# DATA_PATH = "/opt/carnd_p3/data"
+MODEL_NAME = "model_turns4.h5"
+if 0:
+    LOAD_MODEL = None; SAVE_MODEL = MODEL_NAME
+else:
+    LOAD_MODEL = MODEL_NAME; SAVE_MODEL = "save_" + LOAD_MODEL
+NUM_EPOCHS = 5
 
 """ Import data and train """
 lines = []
@@ -24,14 +26,15 @@ with open(DATA_PATH + "/driving_log.csv", 'r') as f:
         lines.append(line)
 lines = lines[1:] # skip header line
 print("Number of lines: ", len(lines))
+print("LOAD_MODEL: " + LOAD_MODEL + ", SAVE_MODEL: " + SAVE_MODEL)
 
-train_samples, valid_samples = train_test_split(lines, test_size=0.2)
+train_samples, valid_samples = train_test_split(lines, test_size=0.1)
 
-def generator(samples, batch_size=32):
+def generator(samples, batch_size):
     N = len(samples)
     while True:
         sklearn.utils.shuffle(samples)
-        steer_corr = 0.2
+        steer_corr = 0.3
         steer_corr_factor = [steer_corr * n for n in [0, 1, -1]]    # [center, left, right]
         # Generate a single batch
         for offset in range(0, N, batch_size):
@@ -40,7 +43,7 @@ def generator(samples, batch_size=32):
             angles = []
             for line in batch_samples:
                 for i in range(3):
-                    fname = line[0].split('/')[-1] # source_path.split()[-1]
+                    fname = line[i].split('/')[-1] # source_path.split()[-1]
                     local_path = DATA_PATH + "/IMG/" + fname
                     img = cv2.imread(local_path)
                     ang = float(line[3]) + steer_corr_factor[i]
@@ -68,16 +71,16 @@ valid_gen = generator(valid_samples, batch_size=BATCH_SIZE)
 def new_model():
     model = Sequential()
     model.add(Lambda(lambda x: x / 255.0 - 0.5, input_shape=(160,320,3)))   # Normalizing
-    model.add(Cropping2D(cropping=((70,25), (0,0))))    # Cropping (out the top noisy scenery)
-    model.add(Conv2D(24,5,5,subsample=(2,2),activation='relu'))
+    model.add(Cropping2D(cropping=((65,25), (0,0))))    # Cropping (out the top noisy scenery)
+    model.add(Conv2D(24,(5,5),activation='relu',strides=(2,2)))
     #model.add(Dropout(0.1))
-    model.add(Conv2D(36,5,5,subsample=(2,2),activation='relu'))
+    model.add(Conv2D(36,(5,5),activation='relu',strides=(2,2)))
     #model.add(Dropout(0.15))
-    model.add(Conv2D(48,5,5,subsample=(2,2),activation='relu'))
+    model.add(Conv2D(48,(5,5),activation='relu',strides=(2,2)))
     #model.add(Dropout(0.2))
-    model.add(Conv2D(64,3,3,activation='relu'))
+    model.add(Conv2D(64,(3,3),activation='relu'))
     #model.add(Dropout(0.25))
-    model.add(Conv2D(64,3,3,activation='relu'))
+    model.add(Conv2D(64,(3,3),activation='relu'))
     #model.add(Dropout(0.3))
     model.add(Flatten())
     model.add(Dense(100))
@@ -90,15 +93,22 @@ def new_model():
     model.compile(optimizer='adam', loss='mse')
     return model
 
+model_checkpoint_callback = keras.callbacks.ModelCheckpoint(
+    filepath="checkpoint",
+    save_weights_only=True,
+    monitor='val_acc',
+    mode='max',
+    save_best_only=True)
+print("Loading " + LOAD_MODEL)
 if LOAD_MODEL is None:
     model = new_model()
 else:
     model = keras.models.load_model(LOAD_MODEL)
-    print("Model loaded!")
 print("Number of lines: ", len(lines), " in ", NUM_BATCHES, " batches")
 model.fit_generator(generator=train_gen,
                     steps_per_epoch=NUM_BATCHES,
                     validation_data=valid_gen,
                     validation_steps=NUM_BATCHES,
-                    epochs=1, verbose=1)
+                    epochs=NUM_EPOCHS, verbose=1, callbacks=[model_checkpoint_callback])
+print("Saving " + SAVE_MODEL)
 model.save(SAVE_MODEL)

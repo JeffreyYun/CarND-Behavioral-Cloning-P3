@@ -11,14 +11,14 @@ from keras.layers import Flatten, Dense, Lambda, Cropping2D, Dropout, MaxPooling
 from keras.layers.convolutional import Conv2D
 
 
+# DATA_PATH = "/opt/carnd_p3/data"
 DATA_PATH = "./data2"
-DATA_PATH = "/opt/carnd_p3/data"
-MODEL_NAME = "model_turns6.h5"
+MODEL_NAME = "model_turns9.h5"
 if not os.path.isfile(MODEL_NAME):
     LOAD_MODEL = None; SAVE_MODEL = MODEL_NAME
 else:
     LOAD_MODEL = MODEL_NAME; SAVE_MODEL = "save_" + LOAD_MODEL
-NUM_EPOCHS = 1
+NUM_EPOCHS = 3
 INPUT_SHAPE = (160,320,3)
 # INPUT_SHAPE = (64,64,3) # (160,320,3)
 

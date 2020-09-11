@@ -23,6 +23,38 @@ The goals / steps of this project are the following:
 [image4]: ./examples/recovery2.jpg "Recovery Image"
 [image5]: ./examples/recovery3.jpg "Recovery Image"
 
+## Summary
+**Explain a recent project you've worked on. Why did you choose this project? What difficulties did you run into this project that you did not expect, and how did you solve them?**
+
+Recently, I used Behavioral Cloning to drive a car around a racetrack. I chose this project since it was part of the Udacity Nanodegree and sounded very interesting to teach a car to drive based on my own driving data. 
+
+I used Keras to make a CNN with five conv layers and three fully-connected (FC) layers. I used dropout layers between the FC layers to reduce overfitting, since dropout sets some values to 0, thus reducing the prediction's dependence on specific connections.
+
+Preprocessing:
+
+- Crop
+- Normalize image values (RGB)
+- DON'T normalize steering angles — visualize to make sure distribution is roughly Gaussian — outputs expected to be heavier left side (left turning) when testing. Pre-scaled to [-1, +1].
+
+**Feature engineering**: Input image + steering angle | Left image (adjust steering angle right by a constant) | Right image similarly
+
+**Cleaning data**: The data didn't have smooth steering angles — it took a lot of training practice to get this right.
+
+- Some unexpected difficulties was in collecting training data. Each sample consisted of an input image from center camera and a steering angle. When the camera shows the car is in the center of the road, don't steer; but if it's, say right of center or approaching a leftward curve, steer to the left. Data samples are collected using a Unity simulator. However, my driving was initially not good as I would overcorrect or react unpredictably instead of providing smooth steering angles, so much of the my training data did not have ideal or even good angles.
+- I visualized the steering angle distribution by plotting to see how abrupt my turning was. I removed samples with steering that was particularly abrupt.
+- Another strategy I used was integrating mouse-based steering instead of keyboard-based steering (using simulator code mentioned on the forum). This reduced the abruptness from keyboard presses, as mouse movement is more continuous.
+- Sometimes the car would miss turns or wobble a lot on straight roads. I needed to collect a lot more data than expected (drive around laps) and even compile new datasets to reflect changes in my driving approach. I made multiple datasets of driving around multiple laps. I also collected some datasets mostly on turns so the car can navigate curves correctly. I alternately used my best turns dataset with my best multiple-lap dataset to train my model, using lower learning rates to fine-tune it.
+- Eventually, my car was able to complete multiple laps around the track smoothly and autonomously.
+
+**Follow-up**: How else would you generate good data, besides just practicing a lot?
+
+- Aforementioned is plotting steering angles as time-series data and comparing with sample training images. Remove particularly abrupt (bad) data and be careful retraining in those segments.
+- One idea is I could have different people generate data and see how the model performs on those — they might use smooth steering angles from the get-go, and have steadier hands than I do. I could also combine data if they have different strengths. For example, if someone drives very well around corners, I could collect a lot of that data and combine it with the non-corners data I have.
+- Since I was at home, I asked my dad to do some driving but he wasn't better than me as far as the simulator was concerned (need to be _very_ subtle when steering to prevent outliers). I'd probably rely on this more in industry, where I have many colleagues nearby to use my simulator and it would be a fun break for them. And we'd also generate more ideas by experiencing this driving and talking together.
+- Untested idea: use Huber loss to mitigate abrupt driving samples?
+
+
+
 ## Rubric Points
 ### Here I will consider the [rubric points](https://review.udacity.com/#!/rubrics/432/view) individually and describe how I addressed each point in my implementation.
 
